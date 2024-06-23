@@ -19,6 +19,12 @@ from .evaluators.faithfulness_measures import (
     AOPC_Sufficiency_Evaluation,
     TauLOO_Evaluation,
 )
+
+#prova 
+from .evaluators.confidence_measures import (
+    CI_Confidence_Evaluation,
+)
+
 from .evaluators.plausibility_measures import (
     AUPRC_PlausibilityEvaluation,
     Tokenf1_PlausibilityEvaluation,
@@ -112,6 +118,7 @@ class Benchmark:
                 AUPRC_PlausibilityEvaluation,
                 Tokenf1_PlausibilityEvaluation,
                 TokenIOU_PlausibilityEvaluation,
+                CI_Confidence_Evaluation,
             ]
             self.evaluators = [
                 ev(self.model, self.tokenizer, self.task_name)
