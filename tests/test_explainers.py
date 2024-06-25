@@ -8,7 +8,7 @@ from transformers import (
     AutoModelForTokenClassification,
     AutoTokenizer
 )
-from ferret import Benchmark, LIMEExplainer, SHAPExplainer, GradientExplainer, IntegratedGradientExplainer, TokenClassificationHelper
+from furetto import Benchmark, LIMEExplainer, SHAPExplainer, GradientExplainer, IntegratedGradientExplainer, TokenClassificationHelper
 
 
 DEFAULT_EXPLAINERS_NUM = 6

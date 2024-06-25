@@ -23,10 +23,10 @@ from .evaluators.faithfulness_measures import (
     TauLOO_Evaluation,
 )
 
-#prova 
+# #prova 
 from .evaluators.confidence_measures import (
-    CI_Confidence_Evaluation,
-)
+     CI_Confidence_Evaluation,
+ )
 
 
 from .evaluators.plausibility_measures import (

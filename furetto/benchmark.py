@@ -13,6 +13,13 @@ from tqdm.autonotebook import tqdm
 from .datasets import BaseDataset
 from .datasets.datamanagers import HateXplainDataset, MovieReviews, SSTDataset
 from .evaluators.class_measures import AOPC_Comprehensiveness_Evaluation_by_class
+
+
+from .evaluators.class_measures import AUPRC_PlausibilityEvaluation_by_class
+from .evaluators.class_measures import CI_Confidence_Evaluation_by_class
+
+
+
 from .evaluators.evaluation import EvaluationMetricOutput, ExplanationEvaluation
 from .evaluators.faithfulness_measures import (
     AOPC_Comprehensiveness_Evaluation,
@@ -20,10 +27,10 @@ from .evaluators.faithfulness_measures import (
     TauLOO_Evaluation,
 )
 
-#prova 
+# #prova 
 from .evaluators.confidence_measures import (
-    CI_Confidence_Evaluation,
-)
+     CI_Confidence_Evaluation,
+ )
 
 from .evaluators.plausibility_measures import (
     AUPRC_PlausibilityEvaluation,
@@ -77,6 +84,7 @@ class Benchmark:
         explainers: List = None,
         evaluators: List = None,
         class_based_evaluators: List = None,
+
     ):
         self.model = model
         self.tokenizer = tokenizer
@@ -86,8 +94,9 @@ class Benchmark:
         self.explainers = explainers
         self.evaluators = evaluators
         self.class_based_evaluators = class_based_evaluators
-
+        
         if not explainers:
+            
             self.explainers = [
                 SHAPExplainer(self.model, self.tokenizer, self.helper),
                 LIMEExplainer(self.model, self.tokenizer, self.helper),
@@ -109,8 +118,9 @@ class Benchmark:
                 if explainer.helper is not None:
                     warnings.warn(f"Overriding helper for explainer {explainer}")
                 explainer.helper = self.helper
-
+        
         if not evaluators:
+            
             self._used_evaluators = [
                 AOPC_Comprehensiveness_Evaluation,
                 AOPC_Sufficiency_Evaluation,
@@ -125,7 +135,8 @@ class Benchmark:
                 for ev in self._used_evaluators
             ]
         if not class_based_evaluators:
-            self._used_class_evaluators = [AOPC_Comprehensiveness_Evaluation_by_class]
+            
+            self._used_class_evaluators = [AOPC_Comprehensiveness_Evaluation_by_class, AUPRC_PlausibilityEvaluation_by_class,CI_Confidence_Evaluation_by_class]
             self.class_based_evaluators = [
                 class_ev(self.model, self.tokenizer, self.task_name)
                 for class_ev in self._used_class_evaluators
@@ -277,6 +288,7 @@ class Benchmark:
         )
 
         for evaluator in self.evaluators:
+            #print(evaluator)
             evaluation = evaluator.compute_evaluation(explanation, **evaluation_args)
             if (
                 evaluation is not None
@@ -321,8 +333,10 @@ class Benchmark:
         Returns:
             List[ExplanationEvaluation]: the evaluation for each explanation
         """
-
+        
         explanation_evaluations = list()
+
+
 
         class_explanations_by_explainer = self._get_class_explanations_by_explainer(
             class_explanations
@@ -400,6 +414,7 @@ class Benchmark:
                 [class_explanations[i][explainer_type] for i in range(n_targets)]
                 for explainer_type in range(n_explainers)
             ]
+
         return class_explanations_by_explainer
 
     ##############################
