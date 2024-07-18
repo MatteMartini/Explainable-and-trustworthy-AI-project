@@ -45,7 +45,6 @@ class GradientExplainer(BaseExplainer):
             return logits
 
         # Sanity checks
-        # TODO these checks have already been conducted if used within the benchmark class. Remove them here if possible.
         target_pos_idx = self.helper._check_target(target)
         target_token_pos_idx = self.helper._check_target_token(text, target_token)
         text = self.helper._check_sample(text)
@@ -61,16 +60,33 @@ class GradientExplainer(BaseExplainer):
 
         inputs = self.get_input_embeds(text)
 
-        attr = dl.attribute(inputs, target=target_pos_idx, **kwargs)
-        attr = attr[0, :input_len, :].detach().cpu()
+        # Initialize a dictionary to store scores for all classes
+        all_token_scores = {}
+        num_classes = self.helper.model.config.num_labels
 
-        # pool over hidden size
-        attr = attr.sum(-1).numpy()
+        for class_idx in range(num_classes):
+            attr = dl.attribute(inputs, target=class_idx, **kwargs)
+            attr = attr[0, :input_len, :].detach().cpu()
 
+            # Pool over hidden size
+            attr = attr.sum(-1).numpy()
+
+            all_token_scores[class_idx] = attr
+
+        #print("Gred")
+        # Ad esempio, stampa i punteggi di importanza per ciascuna classe
+        # for class_idx, scores in all_token_scores.items():
+        #     print(f"Class {class_idx} token scores: {scores}")
+
+
+
+        # Creation of the output Explanation with all importances
         output = Explanation(
             text=text,
             tokens=self.get_tokens(text),
-            scores=attr,
+            scores=all_token_scores[target_pos_idx],
+            all_scores=all_token_scores,  # Include all importances
+            all_scores2={},  # Include all importances
             explainer=self.NAME,
             helper_type=self.helper.HELPER_TYPE,
             target_pos_idx=target_pos_idx,
@@ -83,6 +99,7 @@ class GradientExplainer(BaseExplainer):
             else None,
         )
         return output
+
 
 
 class IntegratedGradientExplainer(BaseExplainer):
@@ -122,8 +139,6 @@ class IntegratedGradientExplainer(BaseExplainer):
         **kwargs,
     ):
         # Sanity checks
-        # TODO these checks have already been conducted if used within the benchmark class. Remove them here if possible.
-
         target_pos_idx = self.helper._check_target(target)
         target_token_pos_idx = self.helper._check_target_token(text, target_token)
         text = self.helper._check_sample(text)
@@ -148,18 +163,32 @@ class IntegratedGradientExplainer(BaseExplainer):
         inputs = self.get_input_embeds(text)
         baselines = self._generate_baselines(input_len)
 
-        attr = dl.attribute(inputs, baselines=baselines, target=target_pos_idx, **kwargs)
+        # Initialize a dictionary to store scores for all classes
+        all_token_scores = {}
+        num_classes = self.helper.model.config.num_labels
 
-        attr = attr[0, :input_len, :].detach().cpu()
+        for class_idx in range(num_classes):
+            attr = dl.attribute(inputs, baselines=baselines, target=class_idx, **kwargs)
+            attr = attr[0, :input_len, :].detach().cpu()
 
-        # pool over hidden size
-        attr = attr.sum(-1).numpy()
+            # Pool over hidden size
+            attr = attr.sum(-1).numpy()
 
-        # norm_attr = self._normalize_input_attributions(attr.detach())
+            all_token_scores[class_idx] = attr
+
+        #print("Gred InntgrT")
+        # Ad esempio, stampa i punteggi di importanza per ciascuna classe
+        # for class_idx, scores in all_token_scores.items():
+        #     print(f"Class {class_idx} token scores: {scores}")
+
+
+        # Creation of the output Explanation with all importances
         output = Explanation(
             text=text,
             tokens=self.get_tokens(text),
-            scores=attr,
+            scores=all_token_scores[target_pos_idx],
+            all_scores=all_token_scores,  # Include all importances
+            all_scores2={},  # Include all importances
             explainer=self.NAME,
             helper_type=self.helper.HELPER_TYPE,
             target_pos_idx=target_pos_idx,

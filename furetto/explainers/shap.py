@@ -1,5 +1,5 @@
 import pdb
-from typing import Dict, Optional, Text, Union
+from typing import Dict, Optional, Text, Union, List
 import logging
 
 import numpy as np
@@ -59,20 +59,36 @@ class SHAPExplainer(BaseExplainer):
         masker = TextMasker(self.tokenizer)
         explainer_partition = shap.Explainer(model=func, masker=masker, **self.init_args)
         shap_values = explainer_partition(text, **kwargs)
-        attr = shap_values.values[0][:, target_pos_idx]
+
         # Tokenize the text for token-level explanation
         item = self._tokenize(text, return_special_tokens_mask=True)
         token_ids = item['input_ids'][0].tolist()
-        token_scores = np.zeros_like(token_ids, dtype=float)
-        # Assigning SHAP values to tokens, ignoring special tokens
-        for i, (shap_value, is_special_token) in enumerate(zip(attr, item['special_tokens_mask'][0])):
-            if not is_special_token:
-                token_scores[i] = shap_value
 
+        # Initializing a dictionary to store scores for all classes
+        all_token_scores = {class_idx: np.zeros_like(token_ids, dtype=float)
+                            for class_idx in range(shap_values.values[0].shape[-1])}
+
+        # Assigning SHAP values to tokens, ignoring special tokens
+        for class_idx in range(shap_values.values[0].shape[-1]):
+            attr = shap_values.values[0][:, class_idx]
+            for i, (shap_value, is_special_token) in enumerate(zip(attr, item['special_tokens_mask'][0])):
+                if not is_special_token:
+                    all_token_scores[class_idx][i] = shap_value
+
+        #print("SHAPPPP A FESS I SRT")
+        # Ad esempio, stampa i punteggi di importanza per ciascuna classe
+        # for class_idx, scores in all_token_scores.items():
+        #     print(f"Class {class_idx} token scores: {scores}")
+        
+    
+
+        # Creazione dell'output Explanation con tutte le importanze
         output = Explanation(
             text=text,
             tokens=self.get_tokens(text),
-            scores=token_scores,
+            scores=all_token_scores[target_pos_idx],
+            all_scores=all_token_scores,  # Aggiungi tutte le importanze
+            all_scores2={},  # Include all importances
             explainer=self.NAME,
             helper_type=self.helper.HELPER_TYPE,
             target_pos_idx=target_pos_idx,
@@ -80,8 +96,6 @@ class SHAPExplainer(BaseExplainer):
             target=self.helper.model.config.id2label[target_pos_idx],
             target_token=self.helper.tokenizer.decode(
                 item["input_ids"][0, target_token_pos_idx].item()
-            )
-            if self.helper.HELPER_TYPE == "token-classification"
-            else None,
+            ) if self.helper.HELPER_TYPE == "token-classification" else None,
         )
         return output

@@ -136,6 +136,7 @@ def show_evaluation_table(
 
     # Flatten to a tabular format: explainers x evaluation metrics
     flat = list()
+    
     for evaluation in explanation_evaluations:
         d = dict()
         d["Explainer"] = evaluation.explanation.explainer

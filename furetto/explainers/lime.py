@@ -116,21 +116,36 @@ class LIMEExplainer(BaseExplainer):
             num_samples = min(len(token_ids) ** 2, max_samples)  # powerset size
         
         expl = run_lime_explainer(token_ids, target_pos_idx, num_samples, lime_args)
+        
+        
 
-        token_scores = np.array(
-        [list(dict(sorted(expl.local_exp[target_pos_idx])).values())]
-        )
-        token_scores[item["special_tokens_mask"].bool().cpu().numpy()] = 0.0
-        # token_scores is initially created as a 2D array with a single row, where each column 
-        # contains the importance score of each token in the analyzed text. 
-        # By setting token_scores = token_scores[0], we convert it to a 1D array for ease of use, 
-        # as it contains scores for the single text sequence processed by LIME.
-        token_scores = token_scores[0]
+       #    Estrarre i saliency scores per tutte le classi!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        all_token_scores = {}
+        for class_idx in range(len(self.helper.model.config.id2label)):
+            if class_idx in expl.local_exp:
+                token_scores = np.array(
+                    [list(dict(sorted(expl.local_exp[class_idx])).values())]
+                )
+                token_scores[item["special_tokens_mask"].bool().cpu().numpy()] = 0.0
+                all_token_scores[class_idx] = token_scores[0]
+            else:
+                all_token_scores[class_idx] = np.zeros(len(token_ids))
 
+        # Ad esempio, stampa i punteggi di importanza per ciascuna classe
+        # for class_idx, scores in all_token_scores.items():
+        #     print(f"Class {class_idx} token scores: {scores}")
+
+
+
+      
+
+        # Creazione dell'output Explanation -> VA MODIFICARO PROPRIO LA CLASSE EXPLANATION AGGIUNGENDOGLI IL CAMP ALL_SCORES!!!!!
         output = Explanation(
             text=text,
             tokens=self.get_tokens(text),
-            scores=token_scores,
+            scores=all_token_scores[target_pos_idx],
+            all_scores=all_token_scores,  # Aggiungi tutte le importanze!!!!!!!!!!!!!!!!!!!!!!!!
+            all_scores2={},  # Include all importances
             explainer=self.NAME,
             helper_type=self.helper.HELPER_TYPE,
             target_pos_idx=target_pos_idx,
@@ -138,8 +153,7 @@ class LIMEExplainer(BaseExplainer):
             target=self.helper.model.config.id2label[target_pos_idx],
             target_token=self.helper.tokenizer.decode(
                 item["input_ids"][0, target_token_pos_idx].item()
-            )
-            if self.helper.HELPER_TYPE == "token-classification"
-            else None,
+            ) if self.helper.HELPER_TYPE == "token-classification" else None,
         )
         return output
+        

@@ -54,7 +54,13 @@ class AOPC_Comprehensiveness_Evaluation(BaseEvaluator):
         remove_first_last, only_pos, removal_args, _ = parse_evaluator_args(
             evaluation_args
         )
-
+        
+        
+        
+    
+        if isinstance(explanation, list):
+            explanation = explanation[0]
+            
         text = explanation.text
         target_pos_idx = explanation.target_pos_idx
         target_token_pos_idx = explanation.target_token_pos_idx
@@ -154,7 +160,6 @@ class AOPC_Comprehensiveness_Evaluation(BaseEvaluator):
         removal_importance = baseline - probs_removing
         #  compute AOPC comprehensiveness
         aopc_comprehesiveness = _compute_aopc(removal_importance)
-
         evaluation_output = EvaluationMetricOutput(self, aopc_comprehesiveness)
         return evaluation_output
 
@@ -189,6 +194,10 @@ class AOPC_Sufficiency_Evaluation(BaseEvaluator):
             evaluation_args
         )
 
+
+        
+        if isinstance(explanation, list):
+            explanation = explanation[0]
         text = explanation.text
         score_explanation = explanation.scores
         target_pos_idx = explanation.target_pos_idx
@@ -324,6 +333,10 @@ class TauLOO_Evaluation(BaseEvaluator):
             Evaluation : the tau-LOO score of the explanation
         """
 
+
+        if isinstance(explanation, list):
+            explanation = explanation[0]
+            
         text = explanation.text
         score_explanation = explanation.scores
         target_pos_idx = explanation.target_pos_idx

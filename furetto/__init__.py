@@ -29,6 +29,14 @@ from .evaluators.confidence_measures import (
  )
 
 
+
+ # #prova 2
+from .evaluators.rationale_consistency_measure import (
+     Rationale_ConsistencyEvaluation,
+     
+ )
+
+
 from .evaluators.plausibility_measures import (
     AUPRC_PlausibilityEvaluation,
     Tokenf1_PlausibilityEvaluation,

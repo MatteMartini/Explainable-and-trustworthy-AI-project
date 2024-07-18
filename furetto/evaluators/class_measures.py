@@ -16,6 +16,7 @@ from .plausibility_measures import AUPRC_PlausibilityEvaluation
 
 
 from .confidence_measures import CI_Confidence_Evaluation
+from .rationale_consistency_measure import Rationale_ConsistencyEvaluation
 
 
 
@@ -145,6 +146,59 @@ class CI_Confidence_Evaluation_by_class:
            )
        else:
            self.ci_conf_eval = ci_conf_eval
+
+   def compute_evaluation(
+       self,
+       class_explanation: List[Union[Explanation, ExplanationWithRationale]],
+       **evaluation_args
+   ):
+
+       ci_values = []
+       for target, explanation in enumerate(class_explanation):
+           ci_values.append(
+               self.ci_conf_eval.compute_evaluation(
+                   explanation, target, **evaluation_args
+               ).score
+           )
+       ci_class_score = np.mean(ci_values)
+       evaluation_output = EvaluationMetricOutput(self.SHORT_NAME, ci_class_score)
+       return evaluation_output
+
+   def aggregate_score(self, score, total, **aggregation_args):
+       return score / total
+
+
+
+
+
+
+
+
+
+
+class Rationale_ConsistencyEvaluation_by_class:
+   NAME = "rationale_consistency"
+   SHORT_NAME = "rc_class_cons"
+   BEST_SORTING_ASCENDING = False
+   TYPE_METRIC = "class_consistency"
+
+   def __init__(
+       self,
+       model,
+       tokenizer,
+       task_name,
+       ci_cons_eval: Rationale_ConsistencyEvaluation = None,
+   ):
+       if ci_cons_eval is None:
+           if model is None or tokenizer is None:
+               raise ValueError("Please specify a model and a tokenizer.")
+
+           self.helper = create_helper(model, tokenizer, task_name)
+           self.ci_cons_eval = CI_Confidence_Evaluation(
+               model, tokenizer, task_name
+           )
+       else:
+           self.ci_cons_eval = ci_cons_eval
 
    def compute_evaluation(
        self,

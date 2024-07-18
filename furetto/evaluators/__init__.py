@@ -16,6 +16,7 @@ class EvaluationMetricFamily(Enum):
     FAITHFULNESS = "faithfulness"
     PLAUSIBILITY = "plausibility"
     CONFIDENCE = "confidence"
+    CONSISTENCY = "consistency"
 
 
 class BaseEvaluator(ABC):

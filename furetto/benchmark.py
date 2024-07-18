@@ -17,6 +17,7 @@ from .evaluators.class_measures import AOPC_Comprehensiveness_Evaluation_by_clas
 
 from .evaluators.class_measures import AUPRC_PlausibilityEvaluation_by_class
 from .evaluators.class_measures import CI_Confidence_Evaluation_by_class
+from .evaluators.class_measures import Rationale_ConsistencyEvaluation_by_class
 
 
 
@@ -30,6 +31,11 @@ from .evaluators.faithfulness_measures import (
 # #prova 
 from .evaluators.confidence_measures import (
      CI_Confidence_Evaluation,
+ )
+
+# #prova  2
+from .evaluators.rationale_consistency_measure import (
+     Rationale_ConsistencyEvaluation,
  )
 
 from .evaluators.plausibility_measures import (
@@ -129,6 +135,7 @@ class Benchmark:
                 Tokenf1_PlausibilityEvaluation,
                 TokenIOU_PlausibilityEvaluation,
                 CI_Confidence_Evaluation,
+                Rationale_ConsistencyEvaluation
             ]
             self.evaluators = [
                 ev(self.model, self.tokenizer, self.task_name)
@@ -136,7 +143,7 @@ class Benchmark:
             ]
         if not class_based_evaluators:
             
-            self._used_class_evaluators = [AOPC_Comprehensiveness_Evaluation_by_class, AUPRC_PlausibilityEvaluation_by_class,CI_Confidence_Evaluation_by_class]
+            self._used_class_evaluators = [AOPC_Comprehensiveness_Evaluation_by_class,AUPRC_PlausibilityEvaluation_by_class,CI_Confidence_Evaluation_by_class,Rationale_ConsistencyEvaluation_by_class]
             self.class_based_evaluators = [
                 class_ev(self.model, self.tokenizer, self.task_name)
                 for class_ev in self._used_class_evaluators
@@ -228,6 +235,8 @@ class Benchmark:
 
         text = self.helper._prepare_sample(text, target_option=target_option)
 
+    
+
         # we might optimize running the loop in parallel
         explanations = list()
         for explainer in tqdm(
@@ -282,7 +291,7 @@ class Benchmark:
 
         add_first_last = evaluation_args.get("add_first_last", True)
         explanation = (
-            self._add_rationale(explanation, human_rationale, add_first_last)
+            self._add_rationale(explanation, human_rationale ,add_first_last)
             if human_rationale is not None
             else explanation
         )
@@ -320,6 +329,7 @@ class Benchmark:
         class_explanations=None,
         show_progress=True,
         **evaluation_args,
+        
     ) -> List[ExplanationEvaluation]:
         """Evaluate explanations using all the evaluators stored in the class.
 
@@ -344,22 +354,47 @@ class Benchmark:
         if show_progress:
             pbar = tqdm(total=len(explanations), desc="Explanation eval", leave=False)
 
-        for i, explanation in enumerate(explanations):
-            class_explanation = None
-            if class_explanations_by_explainer is not None:
-                class_explanation = class_explanations_by_explainer[i]
+        
+        # case of 2 sentence in input        
+        if isinstance(explanations[0], list):
+            
+            exp_set = [explanations[k] for k in range(len(explanations))]
+            for i, explanation in enumerate(exp_set[0]):
+                    class_explanation = None
+                    if class_explanations_by_explainer is not None:
+                        class_explanation = class_explanations_by_explainer[i]
+                    
+                    explanation_evaluations.append(
+                        self.evaluate_explanation(
+                            [exp[i] for exp in exp_set],
+                            human_rationale,
+                            class_explanation,
+                            show_progress=False,
+                            **evaluation_args,
+                        )
+                    )
+                    if show_progress:
+                        pbar.update(1)
+        else:
+            # case default
+            
+            for i, explanation in enumerate(explanations):
+                    class_explanation = None
+                    if class_explanations_by_explainer is not None:
+                        class_explanation = class_explanations_by_explainer[i]
 
-            explanation_evaluations.append(
-                self.evaluate_explanation(
-                    explanation,
-                    human_rationale,
-                    class_explanation,
-                    show_progress=False,
-                    **evaluation_args,
-                )
-            )
-            if show_progress:
-                pbar.update(1)
+                    explanation_evaluations.append(
+                        self.evaluate_explanation(
+                            explanation,
+                            human_rationale,
+                            class_explanation,     
+                            show_progress=False,
+                            **evaluation_args,
+                        )
+                    )
+                    if show_progress:
+                        pbar.update(1)
+
         if show_progress:
             pbar.close()
         return explanation_evaluations
@@ -387,20 +422,52 @@ class Benchmark:
             if add_first_last:
                 # Include the first and last token (0 as default)
                 rationale = [0] + rationale + [0]
-        if len(explanation.tokens) != len(rationale):
-            raise ValueError()
-        return ExplanationWithRationale(
-            text=explanation.text,
-            tokens=explanation.tokens,
-            scores=explanation.scores,
-            explainer=explanation.explainer,
-            target_pos_idx=explanation.target_pos_idx,
-            helper_type=explanation.helper_type,
-            target_token_pos_idx=explanation.target_token_pos_idx,
-            target=explanation.target,
-            target_token=explanation.target_token,
-            rationale=rationale,
-        )
+
+       
+        if isinstance(explanation, list):
+
+            output=[]
+            for i in range(len(explanation)):
+                
+                expl = ExplanationWithRationale(
+                text=explanation[i].text,
+                tokens=explanation[i].tokens,
+                scores=explanation[i].scores,
+                explainer=explanation[i].explainer,
+                target_pos_idx=explanation[i].target_pos_idx,
+                helper_type=explanation[i].helper_type,
+                target_token_pos_idx=explanation[i].target_token_pos_idx,
+                target=explanation[i].target,
+                target_token=explanation[i].target_token,
+                all_scores=explanation[i].all_scores,
+                all_scores2=explanation[i].all_scores2,
+                rationale=rationale,
+                
+                )
+                output.append(expl)
+
+            return output
+
+        else:
+            
+            #default case
+            if len(explanation.tokens) != len(rationale):
+                raise ValueError()
+            return ExplanationWithRationale(
+                text=explanation.text,
+                tokens=explanation.tokens,
+                scores=explanation.scores,
+                explainer=explanation.explainer,
+                target_pos_idx=explanation.target_pos_idx,
+                helper_type=explanation.helper_type,
+                target_token_pos_idx=explanation.target_token_pos_idx,
+                target=explanation.target,
+                target_token=explanation.target_token,
+                all_scores=explanation.all_scores,
+                all_scores2=explanation.all_scores2,
+                rationale=rationale,
+                
+            )
 
     def _get_class_explanations_by_explainer(self, class_explanations):
         """
