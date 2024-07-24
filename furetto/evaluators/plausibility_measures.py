@@ -42,7 +42,7 @@ class AUPRC_PlausibilityEvaluation(BaseEvaluator):
         # Plausibility - Area Under the Precision- Recall curve (AUPRC) - ERASER
         
         if isinstance(explanation_with_rationale, list):
-            explanation_with_rationale = explanation_with_rationale[0]
+            return None
 
         if isinstance(explanation_with_rationale, ExplanationWithRationale) == False:
             return None
@@ -199,7 +199,7 @@ class Tokenf1_PlausibilityEvaluation(BaseEvaluator):
             Evaluation : the Token-f1 Plausibility score of the explanation
         """
         if isinstance(explanation_with_rationale, list):
-            explanation_with_rationale = explanation_with_rationale[0]
+            return None
             
         if isinstance(explanation_with_rationale, ExplanationWithRationale) == False:
             return None

@@ -26,6 +26,7 @@ from .evaluators.faithfulness_measures import (
     AOPC_Comprehensiveness_Evaluation,
     AOPC_Sufficiency_Evaluation,
     TauLOO_Evaluation,
+    Sensitivity_Evaluation
 )
 
 # #prova 
@@ -131,11 +132,12 @@ class Benchmark:
                 AOPC_Comprehensiveness_Evaluation,
                 AOPC_Sufficiency_Evaluation,
                 TauLOO_Evaluation,
+                Sensitivity_Evaluation,
                 AUPRC_PlausibilityEvaluation,
                 Tokenf1_PlausibilityEvaluation,
                 TokenIOU_PlausibilityEvaluation,
                 CI_Confidence_Evaluation,
-                Rationale_ConsistencyEvaluation
+                Rationale_ConsistencyEvaluation,
             ]
             self.evaluators = [
                 ev(self.model, self.tokenizer, self.task_name)
@@ -351,12 +353,13 @@ class Benchmark:
         class_explanations_by_explainer = self._get_class_explanations_by_explainer(
             class_explanations
         )
+        
         if show_progress:
             pbar = tqdm(total=len(explanations), desc="Explanation eval", leave=False)
 
-        
         # case of 2 sentence in input        
         if isinstance(explanations[0], list):
+
             
             exp_set = [explanations[k] for k in range(len(explanations))]
             for i, explanation in enumerate(exp_set[0]):
@@ -378,6 +381,7 @@ class Benchmark:
         else:
             # case default
             
+           
             for i, explanation in enumerate(explanations):
                     class_explanation = None
                     if class_explanations_by_explainer is not None:
@@ -440,7 +444,7 @@ class Benchmark:
                 target=explanation[i].target,
                 target_token=explanation[i].target_token,
                 all_scores=explanation[i].all_scores,
-                all_scores2=explanation[i].all_scores2,
+                all_scores_rand=explanation[i].all_scores_rand,
                 rationale=rationale,
                 
                 )
@@ -464,7 +468,7 @@ class Benchmark:
                 target=explanation.target,
                 target_token=explanation.target_token,
                 all_scores=explanation.all_scores,
-                all_scores2=explanation.all_scores2,
+                all_scores_rand=explanation.all_scores_rand,
                 rationale=rationale,
                 
             )

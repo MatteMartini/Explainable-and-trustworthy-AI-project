@@ -15,7 +15,7 @@ class Explanation:
     target_pos_idx: int
     helper_type: str
     all_scores: dict
-    all_scores2: dict
+    all_scores_rand: dict
     target_token_pos_idx: Optional[int] = None
     target: Optional[str] = None
     target_token: Optional[str] = None

@@ -73,12 +73,6 @@ class GradientExplainer(BaseExplainer):
 
             all_token_scores[class_idx] = attr
 
-        #print("Gred")
-        # Ad esempio, stampa i punteggi di importanza per ciascuna classe
-        # for class_idx, scores in all_token_scores.items():
-        #     print(f"Class {class_idx} token scores: {scores}")
-
-
 
         # Creation of the output Explanation with all importances
         output = Explanation(
@@ -86,7 +80,7 @@ class GradientExplainer(BaseExplainer):
             tokens=self.get_tokens(text),
             scores=all_token_scores[target_pos_idx],
             all_scores=all_token_scores,  # Include all importances
-            all_scores2={},  # Include all importances
+            all_scores_rand={},  
             explainer=self.NAME,
             helper_type=self.helper.HELPER_TYPE,
             target_pos_idx=target_pos_idx,
@@ -176,19 +170,14 @@ class IntegratedGradientExplainer(BaseExplainer):
 
             all_token_scores[class_idx] = attr
 
-        #print("Gred InntgrT")
-        # Ad esempio, stampa i punteggi di importanza per ciascuna classe
-        # for class_idx, scores in all_token_scores.items():
-        #     print(f"Class {class_idx} token scores: {scores}")
-
-
+       
         # Creation of the output Explanation with all importances
         output = Explanation(
             text=text,
             tokens=self.get_tokens(text),
             scores=all_token_scores[target_pos_idx],
             all_scores=all_token_scores,  # Include all importances
-            all_scores2={},  # Include all importances
+            all_scores_rand={},  
             explainer=self.NAME,
             helper_type=self.helper.HELPER_TYPE,
             target_pos_idx=target_pos_idx,

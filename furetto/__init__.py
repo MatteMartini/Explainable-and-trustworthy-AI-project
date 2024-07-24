@@ -21,6 +21,7 @@ from .evaluators.faithfulness_measures import (
     AOPC_Comprehensiveness_Evaluation,
     AOPC_Sufficiency_Evaluation,
     TauLOO_Evaluation,
+    Sensitivity_Evaluation
 )
 
 # #prova 

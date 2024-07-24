@@ -74,12 +74,6 @@ class SHAPExplainer(BaseExplainer):
             for i, (shap_value, is_special_token) in enumerate(zip(attr, item['special_tokens_mask'][0])):
                 if not is_special_token:
                     all_token_scores[class_idx][i] = shap_value
-
-        #print("SHAPPPP A FESS I SRT")
-        # Ad esempio, stampa i punteggi di importanza per ciascuna classe
-        # for class_idx, scores in all_token_scores.items():
-        #     print(f"Class {class_idx} token scores: {scores}")
-        
     
 
         # Creazione dell'output Explanation con tutte le importanze
@@ -87,8 +81,8 @@ class SHAPExplainer(BaseExplainer):
             text=text,
             tokens=self.get_tokens(text),
             scores=all_token_scores[target_pos_idx],
-            all_scores=all_token_scores,  # Aggiungi tutte le importanze
-            all_scores2={},  # Include all importances
+            all_scores=all_token_scores, 
+            all_scores_rand={},  
             explainer=self.NAME,
             helper_type=self.helper.HELPER_TYPE,
             target_pos_idx=target_pos_idx,

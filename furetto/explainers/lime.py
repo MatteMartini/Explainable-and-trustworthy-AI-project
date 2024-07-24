@@ -119,7 +119,7 @@ class LIMEExplainer(BaseExplainer):
         
         
 
-       #    Estrarre i saliency scores per tutte le classi!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     
         all_token_scores = {}
         for class_idx in range(len(self.helper.model.config.id2label)):
             if class_idx in expl.local_exp:
@@ -131,21 +131,14 @@ class LIMEExplainer(BaseExplainer):
             else:
                 all_token_scores[class_idx] = np.zeros(len(token_ids))
 
-        # Ad esempio, stampa i punteggi di importanza per ciascuna classe
-        # for class_idx, scores in all_token_scores.items():
-        #     print(f"Class {class_idx} token scores: {scores}")
-
-
-
       
-
-        # Creazione dell'output Explanation -> VA MODIFICARO PROPRIO LA CLASSE EXPLANATION AGGIUNGENDOGLI IL CAMP ALL_SCORES!!!!!
+        
         output = Explanation(
             text=text,
             tokens=self.get_tokens(text),
             scores=all_token_scores[target_pos_idx],
-            all_scores=all_token_scores,  # Aggiungi tutte le importanze!!!!!!!!!!!!!!!!!!!!!!!!
-            all_scores2={},  # Include all importances
+            all_scores=all_token_scores,
+            all_scores_rand={}, 
             explainer=self.NAME,
             helper_type=self.helper.HELPER_TYPE,
             target_pos_idx=target_pos_idx,
