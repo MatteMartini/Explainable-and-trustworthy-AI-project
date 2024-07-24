@@ -21,7 +21,7 @@ class CI_Confidence_Evaluation(BaseEvaluator):
     LOWER_IS_BETTER = False
     MIN_VALUE = 0.0
     MAX_VALUE = 1.0
-    METRIC_FAMILY = EvaluationMetricFamily.CONFIDENCE  # Cambiato da FAITHFULNESS a CONFIDENCE
+    METRIC_FAMILY = EvaluationMetricFamily.CONFIDENCE 
 
 
     def compute_evaluation(self, explanation: Explanation, **evaluation_args):
@@ -39,6 +39,7 @@ class CI_Confidence_Evaluation(BaseEvaluator):
         
             scores = expl.scores 
             all_scores = expl.all_scores
+            
 
             scores = scores[1:-1]
             for key in all_scores: 

@@ -464,18 +464,18 @@ class Sensitivity_Evaluation(BaseEvaluator):
             if self.tokenizer.cls_token == explanation.tokens[0]:
                 score_explanation = score_explanation[1:-1]
 
-        # Supponiamo che name_model, tokenizer, text, score_explanation, get_discrete_explanation_topK, input_len siano già definiti.
+        
         n = input_len - 1
         n = min(n, top_k)
         thresholds = [i for i in range(1, n)] 
         epsilons = []
 
-        # Carica il modello di classificazione e il tokenizer
+        
         name = name_model
         classification_model = AutoModelForSequenceClassification.from_pretrained(name)
         base_model = AutoModel.from_pretrained(name)
 
-        # Tokenizza la frase
+        
         inputs = tokenizer(text, return_tensors='pt')
         if remove_first_last == True:
             inputs = {
@@ -483,7 +483,7 @@ class Sensitivity_Evaluation(BaseEvaluator):
                 'attention_mask': inputs['attention_mask'][:, 1:-1]
             }
 
-        # Ottieni le rappresentazioni vettoriali (embedding) dei token
+        
         with torch.no_grad():
             outputs = base_model(**inputs)
             token_embeddings = outputs.last_hidden_state
@@ -492,72 +492,64 @@ class Sensitivity_Evaluation(BaseEvaluator):
             # Get rationale
             perturbation_vector = get_discrete_explanation_topK(score_explanation, v, only_pos=False)
             
-            # Aggiungi debug
+            
             print(f"Threshold: {v}, Perturbation Vector: {perturbation_vector}")
 
-            # Parametri per l'attacco PGD
-            alpha = 0.1  # passo per ogni iterazione
-            num_steps = 5  # numero di iterazioni
+            
+            alpha = 0.1  
+            num_steps = 5
 
-            # Ottieni la previsione originale del modello
+        
             with torch.no_grad():
                 original_logits = classification_model(**inputs).logits
                 y = torch.argmax(original_logits, dim=-1)
             
-            # Funzione di attacco PGD
+            
             def pgd_attack(embeddings, epsilon, alpha, num_steps, perturbation_vector, y):
                 perturbed_embeddings = embeddings.clone().detach().requires_grad_(True)
 
-                # Funzione di ottimizzazione PGD
+            
                 optimizer = torch.optim.Adam([perturbed_embeddings], lr=alpha)
 
                 for step in range(num_steps):
                     optimizer.zero_grad()
-                    # Calcola le previsioni del modello di classificazione
+            
                     classificator_inputs = {
                         'attention_mask': inputs['attention_mask'],
                         'inputs_embeds': perturbed_embeddings
                     }
                     logits = classification_model(**classificator_inputs).logits
 
-                    # Calcola la perdita
+            
                     loss = F.cross_entropy(logits, y)
-
-                    # Calcola i gradienti
                     loss.backward()
 
-                    # Applica il gradiente solo agli indici di perturbation_vector
+                  
                     with torch.no_grad():
                         grad = perturbed_embeddings.grad.clone()
         
                         # Ensure the mask has the correct shape
                         mask = torch.tensor(perturbation_vector, dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
-                        mask = mask.expand_as(grad)  # Expand the mask to match the shape of grad
-                        # print(mask.shape)
-                        # torch.Size([1, 7, 1])
-                        # torch.Size([1, 7, 768])
-                        #print(grad)
+                        mask = mask.expand_as(grad)  
+                      
+                        
                         
                         grad = grad * mask
-                        #print(grad)
-
-                        # Debugging gradiente
-                        #print(f"Step: {step}, Epsilon: {epsilon}")
-
+    
                         perturbed_embeddings += alpha * grad.sign()
 
-                        # Proiezione per mantenere la perturbazione entro il limite epsilon
+    
                         perturbation = torch.clamp(perturbed_embeddings - embeddings, -epsilon, epsilon)
                         perturbed_embeddings = (embeddings + perturbation).detach().requires_grad_(True)
                         
-                    # Reset gradienti
+    
                     classification_model.zero_grad()
                     if perturbed_embeddings.grad is not None:
                         perturbed_embeddings.grad.zero_()
 
                 return perturbed_embeddings
 
-            # Ricerca binaria per trovare il minimo epsilon che cambia la previsione del modello
+           
             def binary_search_epsilon(token_embeddings, perturbation_vector, alpha, num_steps, y, tol=1e-3, max_iter=15):
                 low = 0.0
                 high = 1.0
@@ -567,22 +559,19 @@ class Sensitivity_Evaluation(BaseEvaluator):
                     mid = (low + high) / 2.0
                     perturbed_embeddings = pgd_attack(token_embeddings, mid, alpha, num_steps, perturbation_vector, y)
 
-                    # Costruisci l'input finale per il modello di classificazione usando gli embeddings perturbati
+                    
                     classificator_inputs = {
                         'attention_mask': inputs['attention_mask'],
                         'inputs_embeds': perturbed_embeddings
                     }
 
-                    # Ottieni le previsioni del modello di classificazione
+                    
                     with torch.no_grad():
                         classification_outputs = classification_model(**classificator_inputs)
                         logits = classification_outputs.logits
                         predictions = torch.argmax(logits, dim=-1)
 
-                    # Debug della ricerca binaria
-                    #print(f"Epsilon: {mid:.4f}, Predictions: {predictions}, Target: {y}, Iteration#: {i}")
-
-                    # Controlla se la previsione è cambiata
+                    
                     if predictions != y:
                         best_epsilon = mid
                         high = mid
@@ -594,7 +583,6 @@ class Sensitivity_Evaluation(BaseEvaluator):
 
                 return best_epsilon
 
-            # Trova il minimo epsilon che cambia la previsione del modello
             epsilon = binary_search_epsilon(token_embeddings, perturbation_vector, alpha, num_steps, y)
             epsilons.append(epsilon)
 
@@ -603,6 +591,3 @@ class Sensitivity_Evaluation(BaseEvaluator):
 
         evaluation_output = EvaluationMetricOutput(self, sens_auc)
         return evaluation_output
-
-        # def aggregate_score(self, score, total, **aggregation_args):
-        #     return super().aggregate_score(score, total, **aggregation_args)

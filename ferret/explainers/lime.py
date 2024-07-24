@@ -98,10 +98,14 @@ class LIMEExplainer(BaseExplainer):
             lime_explainer = LimeTextExplainer(bow=False, **explainer_args)
 
             lime_args["num_samples"] = num_samples
+
+            num_classes = self.helper.model.config.num_labels
+
             return lime_explainer.explain_instance(
                 " ".join([str(i) for i in token_ids]),
                 fn_prediction_token_ids,
-                labels=[target_pos_idx],
+                #labels=[target_pos_idx],
+                labels=list(range(num_classes)),
                 num_features=len(token_ids),
                 **lime_args,
             )
@@ -117,9 +121,6 @@ class LIMEExplainer(BaseExplainer):
         
         expl = run_lime_explainer(token_ids, target_pos_idx, num_samples, lime_args)
         
-        
-
-     
         all_token_scores = {}
         for class_idx in range(len(self.helper.model.config.id2label)):
             if class_idx in expl.local_exp:

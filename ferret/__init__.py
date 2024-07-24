@@ -24,14 +24,12 @@ from .evaluators.faithfulness_measures import (
     Sensitivity_Evaluation
 )
 
-# #prova 
+
 from .evaluators.confidence_measures import (
      CI_Confidence_Evaluation,
  )
 
 
-
- # #prova 2
 from .evaluators.rationale_consistency_measure import (
      Rationale_ConsistencyEvaluation,
      

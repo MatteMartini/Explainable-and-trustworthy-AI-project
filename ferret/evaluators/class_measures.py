@@ -2,7 +2,7 @@ from typing import List, Union
 
 import numpy as np
 
-from furetto.explainers.explanation import Explanation, ExplanationWithRationale
+from ferret.explainers.explanation import Explanation, ExplanationWithRationale
 
 from ..modeling import create_helper
 from .evaluation import EvaluationMetricOutput
